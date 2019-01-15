@@ -15,6 +15,7 @@
         <h1>Hello World!</h1>
         <a href="admin">admin</a>
         <br>
+        ${info}
         
     </body>
 </html>
