@@ -6,15 +6,19 @@
 package entity;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -50,18 +54,23 @@ public class Users implements Serializable {
     private Collection<Groupuser> groupuserCollection;
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "usersLogin")
     private Collection<Comments> commentsCollection;
+    @OneToOne
+    @JoinColumn(name = "personId")
+    private Person person;
+    
 
     public Users() {
     }
 
-    public Users(String login) {
-        this.login = login;
-    }
-
-    public Users(String login, String password) {
+    public Users(String login, String password, Person person) {
         this.login = login;
         this.password = password;
+        this.person = person;
+        this.commentsCollection = new ArrayList();
+        this.groupuserCollection = new HashSet();
     }
+
+    
 
     public String getLogin() {
         return login;
@@ -119,7 +128,18 @@ public class Users implements Serializable {
 
     @Override
     public String toString() {
-        return "servlets.Users[ login=" + login + " ]";
+        return "Users[ login=" + login 
+                +", Person="+person.getName()
+                +" "+person.getSurname()
+                + " ]";
+    }
+
+    public Person getPerson() {
+        return person;
+    }
+
+    public void setPerson(Person person) {
+        this.person = person;
     }
     
 }

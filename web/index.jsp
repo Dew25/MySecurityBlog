@@ -12,10 +12,13 @@
         <title>Главная страница</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
+        <h1>Hello!</h1>
         <a href="admin">admin</a>
         <br>
         ${info}
+        
+        <br>
+        <a href="showRegistration">Зарегистрироваться</a>
         
     </body>
 </html>

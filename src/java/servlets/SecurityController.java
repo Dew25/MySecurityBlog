@@ -5,6 +5,7 @@
  */
 package servlets;
 
+import entity.Person;
 import entity.Users;
 import java.io.IOException;
 import javax.ejb.EJB;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import session.PersonFacade;
 import session.UsersFacade;
 
 /**
@@ -21,13 +23,18 @@ import session.UsersFacade;
  * @author melnikov
  */
 @WebServlet(name = "SecurityController", urlPatterns = {
+    "/showLogin",
     "/login",
     "/logout",
+    "/showRegistration",
+    "/registration",
     
 })
 public class SecurityController extends HttpServlet {
 
     @EJB UsersFacade usersFacade;
+    @EJB PersonFacade personFacade;
+    
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -44,6 +51,10 @@ public class SecurityController extends HttpServlet {
         String path = request.getServletPath();
         if(path != null)
             switch (path){
+                case "/showLogin":
+                    request.getRequestDispatcher("/login.jsp")
+                            .forward(request, response);
+                    break;
                 case "/login":
                     String username = request.getParameter("username");
                     String password = request.getParameter("password");
@@ -63,6 +74,31 @@ public class SecurityController extends HttpServlet {
                     request.setAttribute("info", "Вы вошли");
                     request.getRequestDispatcher("/index.jsp")
                                 .forward(request, response);
+                    break;
+                case "/showRegistration":
+                    request.getRequestDispatcher("/showRegistration.jsp")
+                            .forward(request, response);
+                    break;
+                case "/registration":
+                    String name = request.getParameter("name");
+                    String surname = request.getParameter("surname");
+                    String email = request.getParameter("email");
+                    String login = request.getParameter("login");
+                    String password1 = request.getParameter("password1");
+                    String password2 = request.getParameter("password2");
+                    if(!password1.equals(password2)){
+                        request.setAttribute("info", "Неодинаковые пороли");
+                        request.getRequestDispatcher("/showRegistration.jsp")
+                            .forward(request, response);
+                        break;
+                    }
+                    Person person = new Person(name, surname, email);
+                    personFacade.create(person);
+                    Users user = new Users(login, password1, person);
+                    usersFacade.create(user);
+                    request.setAttribute("info", "Вы зарегистрированы!");
+                    request.getRequestDispatcher("/index.jsp")
+                            .forward(request, response);
                     break;
             }
     }
