@@ -5,9 +5,13 @@
  */
 package servlets;
 
+import entity.Groupuser;
 import entity.Person;
 import entity.Users;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import javax.ejb.EJB;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,6 +19,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import session.GroupuserFacade;
 import session.PersonFacade;
 import session.UsersFacade;
 
@@ -22,18 +27,42 @@ import session.UsersFacade;
  *
  * @author melnikov
  */
-@WebServlet(name = "SecurityController", urlPatterns = {
+@WebServlet(name = "SecurityController",loadOnStartup = 1, urlPatterns = {
     "/showLogin",
     "/login",
     "/logout",
     "/showRegistration",
     "/registration",
+    "/showAdmin",
+    "/editRole",
     
 })
 public class SecurityController extends HttpServlet {
 
     @EJB UsersFacade usersFacade;
     @EJB PersonFacade personFacade;
+    @EJB GroupuserFacade groupuserFacade;
+
+    @Override
+    public void init() throws ServletException {
+        List<Groupuser> listGroupusers = groupuserFacade.findAll();
+        if(listGroupusers.size() == 0){
+            Person p = new Person(
+                    "Juri", 
+                    "Melnikov", 
+                    "juri.melnikov@ivkhk.ee"
+            );
+            personFacade.create(p);
+            Users u = new Users("admin", "admin", p);
+            usersFacade.create(u);
+            Groupuser g = new Groupuser("ADMINISTRATOR");
+            g.setUsersLogin(u);
+            groupuserFacade.create(g);
+        }
+    }
+
+    
+    
     
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -75,6 +104,15 @@ public class SecurityController extends HttpServlet {
                     request.getRequestDispatcher("/index.jsp")
                                 .forward(request, response);
                     break;
+                case "/logout":
+                    session = request.getSession(false);
+                    if(session != null){
+                        session.invalidate();
+                        request.setAttribute("info", "Вы вышли");
+                    }
+                    request.getRequestDispatcher("/index.jsp")
+                            .forward(request, response);
+                    break;
                 case "/showRegistration":
                     request.getRequestDispatcher("/showRegistration.jsp")
                             .forward(request, response);
@@ -96,11 +134,47 @@ public class SecurityController extends HttpServlet {
                     personFacade.create(person);
                     Users user = new Users(login, password1, person);
                     usersFacade.create(user);
+                    Groupuser gu = new Groupuser();
+                    gu.setName("USER");
+                    gu.setUsersLogin(user);
+                    groupuserFacade.create(gu);
                     request.setAttribute("info", "Вы зарегистрированы!");
                     request.getRequestDispatcher("/index.jsp")
                             .forward(request, response);
                     break;
+                case "/showAdmin":
+                    List<Groupuser> listGroupuser = groupuserFacade.findAll();
+                    request.setAttribute("listGroupuser", listGroupuser);
+                    request.getRequestDispatcher("/WEB-INF/private/admin.jsp")
+                            .forward(request, response);
+                    break;
+                case "/editRole":
+                    login = request.getParameter("login");
+                    String makeAdmin = request.getParameter("makeAdmin");
+                    String rmAdmin = request.getParameter("rmAdmin");
+                    if(makeAdmin != null){
+                        user = usersFacade.find(login);
+                        gu = groupuserFacade.findByUser(user);
+                        groupuserFacade.remove(gu);
+                        gu.setName("ADMINSTRATOR");
+                        gu.setName(user.getLogin());
+                        groupuserFacade.edit(gu);
+                    }
+                    if(rmAdmin != null){
+                        user = usersFacade.find(login);
+                        gu = groupuserFacade.findByUser(user);
+                        groupuserFacade.remove(gu);
+                        gu.setName("USER");
+                        gu.setName(user.getLogin());
+                        groupuserFacade.edit(gu);
+                    }
+                    listGroupuser = groupuserFacade.findAll();
+                    request.setAttribute("listGroupuser", listGroupuser);
+                    request.getRequestDispatcher("/WEB-INF/private/admin.jsp")
+                            .forward(request, response);
+                    break;
             }
+        
     }
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
